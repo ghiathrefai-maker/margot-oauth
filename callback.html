@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Margot PA - Authorization</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f8f4ff;
+    color: #2d2d2d;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    max-width: 420px;
+    width: 100%;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  .icon { font-size: 48px; margin-bottom: 16px; }
+  h1 { font-size: 22px; margin-bottom: 8px; color: #1a1a2e; }
+  p { font-size: 15px; color: #555; line-height: 1.5; margin-bottom: 16px; }
+  .code-box {
+    background: #f0ecf9;
+    border: 1px solid #d4c8ef;
+    border-radius: 10px;
+    padding: 14px;
+    margin: 16px 0;
+    word-break: break-all;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 13px;
+    color: #3a2d6b;
+    text-align: left;
+    max-height: 120px;
+    overflow-y: auto;
+    user-select: all;
+    -webkit-user-select: all;
+  }
+  .btn {
+    display: inline-block;
+    background: #6c5ce7;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 12px;
+    transition: background 0.2s;
+    text-decoration: none;
+  }
+  .btn:hover { background: #5a4bd1; }
+  .btn:active { background: #4a3db8; }
+  .btn-outline {
+    background: transparent;
+    color: #6c5ce7;
+    border: 2px solid #6c5ce7;
+  }
+  .btn-outline:hover { background: #f0ecf9; }
+  .copied {
+    background: #00b894 !important;
+    border-color: #00b894 !important;
+    color: #fff !important;
+  }
+  .error-icon { color: #e74c3c; }
+  .info { font-size: 13px; color: #888; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="card" id="card"></div>
+<script>
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('code');
+  var state = params.get('state');
+  var error = params.get('error');
+  var errorDesc = params.get('error_description');
+  var card = document.getElementById('card');
+
+  if (error) {
+    card.innerHTML =
+      '<div class="icon error-icon">&#10060;</div>' +
+      '<h1>Authorization Failed</h1>' +
+      '<p>' + escapeHtml(errorDesc || error) + '</p>' +
+      '<p>You can close this page and try again from Margot.</p>' +
+      '<a class="btn btn-outline" href="https://t.me/MargotRobbie9bot">Back to Margot</a>';
+    return;
+  }
+
+  if (!code) {
+    card.innerHTML =
+      '<div class="icon">&#128075;</div>' +
+      '<h1>Hi there!</h1>' +
+      '<p>This page is used during account setup. To get started, open Margot on Telegram and ask her to connect your calendar or email.</p>' +
+      '<a class="btn" href="https://t.me/MargotRobbie9bot">Open Margot</a>';
+    return;
+  }
+
+  // Build the code string for the client to copy.
+  // If state is present, prefix the code with it so Margot can identify the provider + client.
+  var displayCode = state ? state + ':' + code : code;
+
+  card.innerHTML =
+    '<div class="icon">&#9989;</div>' +
+    '<h1>Authorization Successful!</h1>' +
+    '<p>Copy the code below and send it to Margot in Telegram.</p>' +
+    '<div class="code-box" id="codeBox">' + escapeHtml(displayCode) + '</div>' +
+    '<button class="btn" id="copyBtn" onclick="copyCode()">Copy Code</button>' +
+    '<a class="btn btn-outline" href="https://t.me/MargotRobbie9bot">Back to Margot</a>' +
+    '<p class="info">You can close this page after copying the code.</p>';
+
+  window.copyCode = function() {
+    var text = displayCode;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(onCopied, fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
+  };
+
+  function fallbackCopy() {
+    var ta = document.createElement('textarea');
+    ta.value = displayCode;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); onCopied(); }
+    catch(e) { alert('Please copy the code manually from the box above.'); }
+    document.body.removeChild(ta);
+  }
+
+  function onCopied() {
+    var btn = document.getElementById('copyBtn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() {
+      btn.textContent = 'Copy Code';
+      btn.classList.remove('copied');
+    }, 2000);
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.appendChild(document.createTextNode(s));
+    return d.innerHTML;
+  }
+})();
+</script>
+</body>
+</html>
